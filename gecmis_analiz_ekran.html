@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="tr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Analiz Geçmişi - AI Dental Analysis</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#13a4ec",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101c22",
+          },
+          fontFamily: {
+            "display": ["Space Grotesk"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<div class="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-40 flex flex-1 justify-center py-5">
+<div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+<!-- TopNavBar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 dark:border-b-[#283339] px-4 md:px-10 py-3">
+<div class="flex items-center gap-4 text-black dark:text-white">
+<div class="size-6 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path>
+</svg>
+</div>
+<h2 class="text-black dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">AI Dental Analysis</h2>
+</div>
+<div class="flex flex-1 justify-end gap-4 md:gap-8">
+<div class="hidden md:flex items-center gap-9">
+<a class="text-gray-800 dark:text-white text-sm font-medium leading-normal" href="#">Yeni Analiz</a>
+<a class="text-primary dark:text-primary text-sm font-medium leading-normal" href="#">Analiz Geçmişi</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em]">
+<span class="truncate">Çıkış Yap</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="User profile picture" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCCFgziooIZ54_xz4RNI39VOtUaGuTDWYrYmmgENNlqMs2M68HwE2HOPK1OtZ-DoHIAw4IKoRYpitiAZ7tsB3LjcYQTwffyyVAAv8SLHtZbE8PvPmwjwQF9gVB6XqkJ0Qr61MhB8tCPUrTBJJrl11oz9LDm3XESKISUcDeKVcSSEBIjONnru9ljdLzDNbP5CN1hn8AefC9DftNJ47nFK66obCPUgB9m_dnYhV__cmE0JuD4idjuC9bX8A5IGC0JDuojKz0RoEYbsmpF");'></div>
+</div>
+</div>
+</header>
+<!-- PageHeading -->
+<div class="flex flex-wrap justify-between gap-3 p-4 mt-6">
+<div class="flex min-w-72 flex-col gap-3">
+<p class="text-black dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">Analiz Geçmişim</p>
+<p class="text-gray-600 dark:text-[#9db0b9] text-base font-normal leading-normal">Daha önce yüklediğiniz röntgenleri ve analiz sonuçlarını görüntüleyin.</p>
+</div>
+</div>
+<!-- SearchBar and Chips -->
+<div class="flex flex-col md:flex-row gap-4 px-4 py-3">
+<div class="flex-grow">
+<label class="flex flex-col min-w-40 h-12 w-full">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+<div class="text-gray-500 dark:text-[#9db0b9] flex border border-gray-300 dark:border-[#283339] bg-white dark:bg-[#283339] items-center justify-center pl-4 rounded-l-lg border-r-0">
+<span class="material-symbols-outlined" style="font-size: 24px;">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-black dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary border border-gray-300 dark:border-[#283339] bg-white dark:bg-[#283339] focus:border-primary h-full placeholder:text-gray-500 dark:placeholder:text-[#9db0b9] px-4 pl-2 text-base font-normal leading-normal" placeholder="Hasta adı veya analiz ID'sine göre ara" value=""/>
+</div>
+</label>
+</div>
+<div class="flex gap-3 overflow-x-auto pb-2">
+<button class="flex h-12 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-100 dark:bg-[#283339] px-4">
+<p class="text-black dark:text-white text-sm font-medium leading-normal">Tarih Aralığı</p>
+<div class="text-black dark:text-white"><span class="material-symbols-outlined" style="font-size: 20px;">expand_more</span></div>
+</button>
+<button class="flex h-12 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-100 dark:bg-[#283339] px-4">
+<p class="text-black dark:text-white text-sm font-medium leading-normal">Teşhis Sonucu</p>
+<div class="text-black dark:text-white"><span class="material-symbols-outlined" style="font-size: 20px;">expand_more</span></div>
+</button>
+<button class="flex h-12 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-100 dark:bg-[#283339] px-4">
+<p class="text-black dark:text-white text-sm font-medium leading-normal">Durum</p>
+<div class="text-black dark:text-white"><span class="material-symbols-outlined" style="font-size: 20px;">expand_more</span></div>
+</button>
+</div>
+</div>
+<!-- ImageGrid as Analysis Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+<!-- Analysis Card 1 -->
+<div class="flex flex-col gap-3 rounded-xl bg-white dark:bg-[#1a242a] p-4 border border-gray-200 dark:border-[#283339] transition-all duration-300 hover:shadow-lg hover:dark:shadow-primary/20 hover:-translate-y-1 cursor-pointer">
+<div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg" data-alt="X-ray thumbnail for Analysis #12345" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBtSKOVKZetUh1Ss4Ko3PYMFp_pmSMnlyWB9R96fmBedntFQBhp4aFq3zZ_4EESCVVmhvl7GPVJVdCqzLllao4j2q0hKdMwnPpWUYAOkD402dFa7TLn2hZy7f2eZd-yzdVTvGVbrEycVJPgc8QlE5WQnSUwcBciT18MaIGUm61J71lGXQQxIoOz4ncY8ezLqrxvOZ9cBs5whk9wH7miMINxTpEOIrSxL9N6UsinUWDICiPwXiSxTqTObCD00NjEL8fGTIScRG9UbXUc");'></div>
+<div class="flex flex-col gap-1.5">
+<p class="text-black dark:text-white text-base font-bold leading-normal">Analiz #12345</p>
+<p class="text-gray-600 dark:text-[#9db0b9] text-sm font-normal leading-normal">15 Mayıs 2024</p>
+<p class="text-gray-600 dark:text-[#9db0b9] text-sm font-normal leading-normal">AI Özeti: 3 Çürük, 1 Kök Ucu Lezyonu</p>
+<div class="mt-2">
+<span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/50 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-400">Tamamlandı</span>
+</div>
+</div>
+</div>
+<!-- Analysis Card 2 -->
+<div class="flex flex-col gap-3 rounded-xl bg-white dark:bg-[#1a242a] p-4 border border-gray-200 dark:border-[#283339] transition-all duration-300 hover:shadow-lg hover:dark:shadow-primary/20 hover:-translate-y-1 cursor-pointer">
+<div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg" data-alt="X-ray thumbnail for Analysis #12344" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDZxp1rwHCpVZDxPjroKGLvRI_HTQJ7sGqsINklV_lTSn7X6sdyTZWz_Jlxj8Fc9XtFbTGqWWQLe2Iqiyd96mn4L6IChgGl1B50Ju4go3iUEs_XG2TUz7XVAGKUrGrLa7becCpoczzBumuWDzIYB_xjtRpLe79A5_1eWa0lpgL6D-hRjCjeCwl843dEBryZtf7jsBBEMG4w6jmHyorIAM3jrPGqn8Z4lc1emnwSV9bJLX_WTmwGZeOiADY0-L8D1RldJ6kO-O41qBiF");'></div>
+<div class="flex flex-col gap-1.5">
+<p class="text-black dark:text-white text-base font-bold leading-normal">Analiz #12344</p>
+<p class="text-gray-600 dark:text-[#9db0b9] text-sm font-normal leading-normal">14 Mayıs 2024</p>
+<p class="text-gray-600 dark:text-[#9db0b9] text-sm font-normal leading-normal">AI Özeti: Birden Fazla Çürük Tespiti</p>
+<div class="mt-2">
+<span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/50 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-400">Tamamlandı</span>
+</div>
+</div>
+</div>
+<!-- Analysis Card 3 -->
+<div class="flex flex-col gap-3 rounded-xl bg-white dark:bg-[#1a242a] p-4 border border-gray-200 dark:border-[#283339] transition-all duration-300 hover:shadow-lg hover:dark:shadow-primary/20 hover:-translate-y-1 cursor-pointer">
+<div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg" data-alt="X-ray thumbnail for Analysis #12343" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD4ME4ut_gtrBQF9k0QdpjJFdNGKS0IPyvBFtK1omEgASCJfyH7_SmkIE-7zYLNPu8E7XBqYN1tqIJwUffglajkRbWS-__zrgzaylvGmqTuojmgJtdDWrKWV_IbZJQvZknASjiIEOmcl25fWQYtJqVj3dBSDh3jfQZh6fLJNmlOmfL64ff0gKgLEHhZf1p59rWVrZyefnLtzKe6u_Imd_PUFjvTVp8XK67Hgp1klw2vinuaTw_gGMXzf_DZVMtiLIiSR4S3PK7qTy7U");'></div>
+<div class="flex flex-col gap-1.5">
+<p class="text-black dark:text-white text-base font-bold leading-normal">Analiz #12343</p>
+<p class="text-gray-600 dark:text-[#9db0b9] text-sm font-normal leading-normal">12 Mayıs 2024</p>
+<p class="text-gray-600 dark:text-[#9db0b9] text-sm font-normal leading-normal">AI Özeti: Apikal Lezyon</p>
+<div class="mt-2">
+<span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/50 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-400">Tamamlandı</span>
+</div>
+</div>
+</div>
+<!-- Analysis Card 4 -->
+<div class="flex flex-col gap-3 rounded-xl bg-white dark:bg-[#1a242a] p-4 border border-gray-200 dark:border-[#283339] transition-all duration-300 hover:shadow-lg hover:dark:shadow-primary/20 hover:-translate-y-1 cursor-pointer">
+<div class="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg" data-alt="X-ray thumbnail for Analysis #12342" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBgcJcbCfYSa9IfUDo10e0dJJbJPIHiTkmuCyHXtXa0lp4bW6f0BWXolIVyXvit04n01ZhQX9-N_AS0Vxw-h1XYkp4XR_R6BdjSDSNeVK_LiWsjAurwHfj9u06Vdo0qk3jUu-bBSytBJ6nkra9e9veTWAU8RTtPaeCmJFTgB4-GqPMNYDRfxMPp1ntwXfFlNnAE5P9Cx5qtjF2MUgTi19egYKuYohzSyt8fVl7TFd5nEvhWE7saMVTMGRy5TqhLfuMcB14l3vkAArgi");'></div>
+<div class="flex flex-col gap-1.5">
+<p class="text-black dark:text-white text-base font-bold leading-normal">Analiz #12342</p>
+<p class="text-gray-600 dark:text-[#9db0b9] text-sm font-normal leading-normal">10 Mayıs 2024</p>
+<p class="text-gray-600 dark:text-[#9db0b9] text-sm font-normal leading-normal">AI Özeti: Periodontal Kemik Kaybı</p>
+<div class="mt-2">
+<span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/50 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-400">Tamamlandı</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>
