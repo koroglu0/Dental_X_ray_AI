@@ -14,14 +14,42 @@ export default function Header() {
   }, []);
 
   const handleLogout = () => {
+    // Tüm storage'ı temizle
     localStorage.removeItem('token');
+    localStorage.removeItem('id_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     setUser(null);
-    navigate('/');
+    navigate('/login');
   };
 
   const handleLogin = () => {
     navigate('/login');
+  };
+
+  const getDashboardLink = () => {
+    if (!user) return '/';
+    switch (user.role) {
+      case 'admin':
+        return '/admin';
+      case 'doctor':
+        return '/doctor';
+      default:
+        return '/';
+    }
+  };
+
+  const getRoleBadge = (role) => {
+    switch (role) {
+      case 'admin':
+        return <span className="px-2 py-0.5 bg-purple-500/20 text-purple-700 dark:text-purple-400 text-xs rounded-full">Admin</span>;
+      case 'doctor':
+        return <span className="px-2 py-0.5 bg-blue-500/20 text-blue-700 dark:text-blue-400 text-xs rounded-full">Doktor</span>;
+      case 'patient':
+        return <span className="px-2 py-0.5 bg-green-500/20 text-green-700 dark:text-green-400 text-xs rounded-full">Hasta</span>;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -40,19 +68,24 @@ export default function Header() {
       </div>
       <div className="flex flex-1 justify-end items-center gap-4 sm:gap-8">
         <div className="hidden sm:flex items-center gap-9">
-          <Link to="/about" className="text-gray-600 dark:text-gray-300 text-sm font-medium leading-normal hover:text-primary transition-colors">
-            Hakkımızda
-          </Link>
+          {user && (user.role === 'admin' || user.role === 'doctor') && (
+            <Link to={getDashboardLink()} className="text-gray-600 dark:text-gray-300 text-sm font-medium leading-normal hover:text-primary transition-colors">
+              Dashboard
+            </Link>
+          )}
           <Link to="/history" className="text-gray-600 dark:text-gray-300 text-sm font-medium leading-normal hover:text-primary transition-colors">
             Geçmiş Analizler
           </Link>
         </div>
         
         {user ? (
-          <div className="flex items-center gap-4">
-            <span className="text-black dark:text-white text-sm font-medium">
-              {user.name}
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <p className="text-black dark:text-white text-sm font-medium">
+                {user.name}
+              </p>
+              {user.role && getRoleBadge(user.role)}
+            </div>
             <button
               onClick={handleLogout}
               className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-slate-200 dark:bg-slate-800 text-black dark:text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors"

@@ -9,8 +9,15 @@ export default function ResultPage() {
   const { result, imageUrl } = location.state || {};
   const [selectedFinding, setSelectedFinding] = useState(null);
   const [showMarkers, setShowMarkers] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [aiReport, setAiReport] = useState(null);
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
+  const containerRef = useRef(null);
 
   if (!result) {
     navigate('/');
@@ -136,7 +143,84 @@ export default function ResultPage() {
       image.removeEventListener('load', updateCanvas);
       window.removeEventListener('resize', updateCanvas);
     };
-  }, [findings, showMarkers, selectedFinding]);
+  }, [findings, showMarkers, selectedFinding, zoom, position]);
+
+  // Prevent scroll on wheel event
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const preventScroll = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleWheel(e);
+    };
+
+    container.addEventListener('wheel', preventScroll, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', preventScroll);
+    };
+  }, [zoom, position]);
+
+  // Zoom handler
+  const handleWheel = (e) => {
+    const delta = e.deltaY * -0.001;
+    const newZoom = Math.min(Math.max(1, zoom + delta), 5);
+    
+    if (newZoom === 1) {
+      setPosition({ x: 0, y: 0 });
+    }
+    setZoom(newZoom);
+  };
+
+  // Pan handlers
+  const handleMouseDown = (e) => {
+    if (zoom > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging && zoom > 1) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  // Reset zoom
+  const resetZoom = () => {
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  // Zoom in/out buttons
+  const zoomIn = () => {
+    const newZoom = Math.min(zoom + 0.5, 5);
+    setZoom(newZoom);
+  };
+
+  const zoomOut = () => {
+    const newZoom = Math.max(zoom - 0.5, 1);
+    if (newZoom === 1) {
+      setPosition({ x: 0, y: 0 });
+    }
+    setZoom(newZoom);
+  };
 
   const getRiskColor = (risk) => {
     switch (risk) {
@@ -164,133 +248,131 @@ export default function ResultPage() {
     }
   };
 
+  // AI ile rapor oluştur
+  const generateAIReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/generate-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ findings })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAiReport(data.report);
+        return data.report;
+      } else {
+        console.error('AI rapor hatası');
+        return null;
+      }
+    } catch (error) {
+      console.error('AI rapor oluşturma hatası:', error);
+      return null;
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
   const downloadPDFReport = async () => {
     try {
+      setIsGeneratingReport(true);
       console.log('PDF indirme başlatılıyor...');
-      console.log('Findings:', findings);
-      console.log('Image URL:', imageUrl);
+      
+      // Önce AI raporu oluştur
+      let report = aiReport;
+      if (!report) {
+        console.log('AI raporu oluşturuluyor...');
+        report = await generateAIReport();
+      }
       
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Başlık
-    doc.setFontSize(20);
-    doc.setTextColor(19, 164, 236); // Primary color
-    doc.text('AI Dental Analiz Raporu', pageWidth / 2, 20, { align: 'center' });
+    // ===== SAYFA 1: KAPAK =====
+    doc.setFontSize(24);
+    doc.setTextColor(19, 164, 236);
+    doc.text('AI Dental Analiz Raporu', pageWidth / 2, 30, { align: 'center' });
     
-    // Tarih
-    doc.setFontSize(10);
+    // Alt başlık
+    doc.setFontSize(12);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Analiz Tarihi: ${new Date().toLocaleDateString('tr-TR')}`, pageWidth / 2, 28, { align: 'center' });
+    doc.text('Yapay Zeka Destekli Detaylı Klinik Değerlendirme', pageWidth / 2, 40, { align: 'center' });
+    
+    // Tarih ve bilgiler
+    doc.setFontSize(10);
+    doc.text(`Analiz Tarihi: ${new Date().toLocaleDateString('tr-TR')}`, pageWidth / 2, 55, { align: 'center' });
+    doc.text(`Saat: ${new Date().toLocaleTimeString('tr-TR')}`, pageWidth / 2, 62, { align: 'center' });
     
     // Çizgi
-    doc.setDrawColor(200, 200, 200);
-    doc.line(15, 32, pageWidth - 15, 32);
+    doc.setDrawColor(19, 164, 236);
+    doc.setLineWidth(0.5);
+    doc.line(30, 70, pageWidth - 30, 70);
     
-    let yPosition = 40;
+    let yPosition = 85;
 
     // Röntgen görselini ekle
     if (imageRef.current && imageRef.current.complete) {
       try {
-        // CORS sorununu çözmek için görseli yeniden yükle
         const img = new Image();
         img.crossOrigin = 'anonymous';
         
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = reject;
-          // Eğer imageUrl base64 ise direkt kullan, değilse backend'den çek
-          if (imageUrl.startsWith('data:')) {
-            img.src = imageUrl;
-          } else {
-            // Backend URL'ini kullan
-            img.src = imageUrl;
-          }
+          img.src = imageUrl.startsWith('data:') ? imageUrl : imageUrl;
         });
         
-        // Canvas'a görseli ve bounding box'ları çiz
         const tempCanvas = document.createElement('canvas');
-        
-        // Orijinal boyutları kullan
         tempCanvas.width = img.naturalWidth || img.width;
         tempCanvas.height = img.naturalHeight || img.height;
-        
         const ctx = tempCanvas.getContext('2d');
-        
-        // Görseli çiz
         ctx.drawImage(img, 0, 0);
         
         // Bounding box'ları çiz
         findings.forEach((finding, index) => {
           if (!finding.bbox) return;
-
           const { x1, y1, x2, y2 } = finding.bbox;
-          
           const boxX = x1 * tempCanvas.width;
           const boxY = y1 * tempCanvas.height;
           const boxWidth = (x2 - x1) * tempCanvas.width;
           const boxHeight = (y2 - y1) * tempCanvas.height;
 
-          // Risk seviyesine göre renk
           let color;
           switch (finding.risk) {
-            case 'High Risk':
-              color = 'rgb(239, 68, 68)';
-              break;
-            case 'Medium':
-              color = 'rgb(249, 115, 22)';
-              break;
-            default:
-              color = 'rgb(34, 197, 94)';
+            case 'High Risk': color = 'rgb(239, 68, 68)'; break;
+            case 'Medium': color = 'rgb(249, 115, 22)'; break;
+            default: color = 'rgb(34, 197, 94)';
           }
 
           ctx.strokeStyle = color;
           ctx.lineWidth = 4;
           ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
 
-          // Label
           const label = `${index + 1}. ${finding.name}`;
           ctx.font = 'bold 24px Arial';
-          const textMetrics = ctx.measureText(label);
-          const textWidth = textMetrics.width;
-          const textHeight = 30;
-
+          const textWidth = ctx.measureText(label).width;
           ctx.fillStyle = color;
-          ctx.fillRect(boxX, boxY - textHeight - 8, textWidth + 16, textHeight);
-
+          ctx.fillRect(boxX, boxY - 38, textWidth + 16, 30);
           ctx.fillStyle = 'white';
           ctx.fillText(label, boxX + 8, boxY - 12);
-
-          // Güven skoru
-          if (finding.confidence) {
-            const confidenceText = `${Math.round(finding.confidence)}%`;
-            ctx.font = '20px Arial';
-            const confWidth = ctx.measureText(confidenceText).width;
-            
-            ctx.fillStyle = color;
-            ctx.fillRect(boxX, boxY + boxHeight + 8, confWidth + 16, 28);
-            
-            ctx.fillStyle = 'white';
-            ctx.fillText(confidenceText, boxX + 8, boxY + boxHeight + 28);
-          }
         });
         
         const imgData = tempCanvas.toDataURL('image/jpeg', 0.8);
-        
-        // PDF'e görseli ekle (en-boy oranını koru)
-        const imgWidth = pageWidth - 30;
+        const imgWidth = pageWidth - 40;
         const imgHeight = (tempCanvas.height * imgWidth) / tempCanvas.width;
         
-        // Görsel yüksekliği sayfayı aşıyorsa küçült
-        if (imgHeight > pageHeight - 80) {
-          const ratio = (pageHeight - 80) / imgHeight;
-          const newWidth = imgWidth * ratio;
-          const newHeight = imgHeight * ratio;
-          doc.addImage(imgData, 'JPEG', (pageWidth - newWidth) / 2, yPosition, newWidth, newHeight);
-          yPosition += newHeight + 10;
+        if (imgHeight > 120) {
+          const ratio = 120 / imgHeight;
+          doc.addImage(imgData, 'JPEG', (pageWidth - imgWidth * ratio) / 2, yPosition, imgWidth * ratio, 120);
+          yPosition += 130;
         } else {
-          doc.addImage(imgData, 'JPEG', 15, yPosition, imgWidth, imgHeight);
+          doc.addImage(imgData, 'JPEG', 20, yPosition, imgWidth, imgHeight);
           yPosition += imgHeight + 10;
         }
       } catch (error) {
@@ -298,20 +380,104 @@ export default function ResultPage() {
       }
     }
 
-    // Yeni sayfa
+    // ===== SAYFA 2: AI ÖZETİ =====
     doc.addPage();
     yPosition = 20;
 
-    // Bulgular özeti
     doc.setFontSize(16);
     doc.setTextColor(19, 164, 236);
-    doc.text('Analiz Özeti', 15, yPosition);
-    yPosition += 10;
+    doc.text('🤖 AI Klinik Değerlendirme', 15, yPosition);
+    yPosition += 12;
 
+    if (report) {
+      // Özet
+      if (report.ozet) {
+        doc.setFontSize(11);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont(undefined, 'bold');
+        doc.text('Genel Değerlendirme:', 15, yPosition);
+        yPosition += 6;
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        const ozetLines = doc.splitTextToSize(report.ozet, pageWidth - 30);
+        doc.text(ozetLines, 15, yPosition);
+        yPosition += ozetLines.length * 5 + 8;
+      }
+
+      // Risk Değerlendirmesi
+      if (report.risk_degerlendirmesi) {
+        doc.setFontSize(11);
+        doc.setTextColor(239, 68, 68);
+        doc.setFont(undefined, 'bold');
+        doc.text('⚠️ Risk Değerlendirmesi:', 15, yPosition);
+        yPosition += 6;
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(60, 60, 60);
+        const riskLines = doc.splitTextToSize(report.risk_degerlendirmesi, pageWidth - 30);
+        doc.text(riskLines, 15, yPosition);
+        yPosition += riskLines.length * 5 + 8;
+      }
+
+      // Acil Müdahale
+      if (report.acil_mudahale && report.acil_mudahale.length > 10) {
+        doc.setFillColor(255, 240, 240);
+        doc.rect(15, yPosition - 3, pageWidth - 30, 20, 'F');
+        doc.setFontSize(10);
+        doc.setTextColor(200, 0, 0);
+        doc.setFont(undefined, 'bold');
+        doc.text('🚨 ACİL:', 17, yPosition + 4);
+        doc.setFont(undefined, 'normal');
+        const acilLines = doc.splitTextToSize(report.acil_mudahale, pageWidth - 50);
+        doc.text(acilLines, 35, yPosition + 4);
+        yPosition += 25;
+      }
+
+      // Tedavi Planı
+      if (report.tedavi_plani) {
+        doc.setFontSize(11);
+        doc.setTextColor(34, 197, 94);
+        doc.setFont(undefined, 'bold');
+        doc.text('📋 Önerilen Tedavi Planı:', 15, yPosition);
+        yPosition += 6;
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(60, 60, 60);
+        const tedaviLines = doc.splitTextToSize(report.tedavi_plani, pageWidth - 30);
+        doc.text(tedaviLines, 15, yPosition);
+        yPosition += tedaviLines.length * 5 + 8;
+      }
+
+      // Takip Önerileri
+      if (report.takip_onerileri) {
+        doc.setFontSize(11);
+        doc.setTextColor(19, 164, 236);
+        doc.setFont(undefined, 'bold');
+        doc.text('📅 Takip Önerileri:', 15, yPosition);
+        yPosition += 6;
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(60, 60, 60);
+        const takipLines = doc.splitTextToSize(report.takip_onerileri, pageWidth - 30);
+        doc.text(takipLines, 15, yPosition);
+        yPosition += takipLines.length * 5 + 8;
+      }
+    }
+
+    // ===== SAYFA 3: BULGULAR TABLOSU =====
+    doc.addPage();
+    yPosition = 20;
+
+    doc.setFontSize(16);
+    doc.setTextColor(19, 164, 236);
+    doc.text('📊 Tespit Edilen Bulgular', 15, yPosition);
+    yPosition += 12;
+
+    // İstatistikler
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
-    doc.text(`Toplam ${findings.length} bulgu tespit edildi.`, 15, yPosition);
-    yPosition += 15;
+    doc.text(`Toplam: ${findings.length} bulgu | Yüksek Risk: ${stats.highRisk} | Orta Risk: ${stats.mediumRisk} | Düşük Risk: ${stats.lowRisk}`, 15, yPosition);
+    yPosition += 10;
 
     // Bulgular tablosu
     const tableData = findings.map((finding, index) => [
@@ -324,7 +490,7 @@ export default function ResultPage() {
 
     autoTable(doc, {
       startY: yPosition,
-      head: [['#', 'Bulgu', 'Konum', 'Risk Seviyesi', 'Güven']],
+      head: [['#', 'Bulgu', 'Konum', 'Risk', 'Güven']],
       body: tableData,
       theme: 'grid',
       headStyles: {
@@ -333,90 +499,161 @@ export default function ResultPage() {
         fontSize: 10,
         fontStyle: 'bold'
       },
-      bodyStyles: {
-        fontSize: 9
-      },
+      bodyStyles: { fontSize: 9 },
       columnStyles: {
         0: { cellWidth: 10 },
-        1: { cellWidth: 50 },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 40 },
+        1: { cellWidth: 55 },
+        2: { cellWidth: 45 },
+        3: { cellWidth: 30 },
         4: { cellWidth: 25 }
       },
       margin: { left: 15, right: 15 }
     });
 
-    yPosition = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 15 : yPosition + 100;
+    // ===== SAYFA 4+: DETAYLI BULGULAR =====
+    doc.addPage();
+    yPosition = 20;
 
-    // Detaylı bulgular
+    doc.setFontSize(16);
+    doc.setTextColor(19, 164, 236);
+    doc.text('📝 Detaylı Bulgu Analizi', 15, yPosition);
+    yPosition += 15;
+
+    // AI detaylı bulgular varsa kullan
+    const detayliBulgular = report?.detayli_bulgular || [];
+
     findings.forEach((finding, index) => {
-      // Sayfa kontrolü
-      if (yPosition > pageHeight - 60) {
+      if (yPosition > pageHeight - 70) {
         doc.addPage();
         yPosition = 20;
       }
 
-      doc.setFontSize(12);
-      doc.setTextColor(19, 164, 236);
-      doc.text(`${index + 1}. ${finding.name}`, 15, yPosition);
-      yPosition += 6;
-
-      doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Konum: ${finding.location} | Risk: ${getRiskText(finding.risk)} | Güven: ${Math.round(finding.confidence)}%`, 15, yPosition);
-      yPosition += 8;
-
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Açıklama:', 15, yPosition);
-      yPosition += 5;
-      
-      const descLines = doc.splitTextToSize(finding.description, pageWidth - 35);
-      doc.setFontSize(9);
-      doc.setTextColor(60, 60, 60);
-      doc.text(descLines, 20, yPosition);
-      yPosition += descLines.length * 5 + 5;
-
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Öneriler:', 15, yPosition);
-      yPosition += 5;
-      
-      const recLines = doc.splitTextToSize(finding.recommendations, pageWidth - 35);
-      doc.setFontSize(9);
-      doc.setTextColor(60, 60, 60);
-      doc.text(recLines, 20, yPosition);
-      yPosition += recLines.length * 5 + 10;
-
-      // Ayırıcı çizgi
-      if (index < findings.length - 1) {
-        doc.setDrawColor(220, 220, 220);
-        doc.line(15, yPosition, pageWidth - 15, yPosition);
-        yPosition += 10;
+      // Bulgu başlığı
+      let riskColor;
+      switch (finding.risk) {
+        case 'High Risk': riskColor = [239, 68, 68]; break;
+        case 'Medium': riskColor = [249, 115, 22]; break;
+        default: riskColor = [34, 197, 94];
       }
+      
+      doc.setFillColor(...riskColor);
+      doc.rect(15, yPosition - 4, 5, 18, 'F');
+      
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${index + 1}. ${finding.name}`, 25, yPosition + 4);
+      
+      doc.setFontSize(9);
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Konum: ${finding.location} | Risk: ${getRiskText(finding.risk)} | Güven: ${Math.round(finding.confidence)}%`, 25, yPosition + 12);
+      yPosition += 22;
+
+      // AI detaylı bulgu varsa
+      const aiDetay = detayliBulgular.find(d => d.bulgu?.toLowerCase().includes(finding.name?.toLowerCase().split(' ')[0]));
+      
+      if (aiDetay) {
+        if (aiDetay.klinik_onemi) {
+          doc.setFontSize(10);
+          doc.setTextColor(19, 164, 236);
+          doc.text('Klinik Önemi:', 20, yPosition);
+          yPosition += 5;
+          doc.setFontSize(9);
+          doc.setTextColor(60, 60, 60);
+          const onemiLines = doc.splitTextToSize(aiDetay.klinik_onemi, pageWidth - 40);
+          doc.text(onemiLines, 25, yPosition);
+          yPosition += onemiLines.length * 4 + 4;
+        }
+        
+        if (aiDetay.tedavi_onerileri) {
+          doc.setFontSize(10);
+          doc.setTextColor(34, 197, 94);
+          doc.text('Tedavi Önerisi:', 20, yPosition);
+          yPosition += 5;
+          doc.setFontSize(9);
+          doc.setTextColor(60, 60, 60);
+          const tedaviLines = doc.splitTextToSize(aiDetay.tedavi_onerileri, pageWidth - 40);
+          doc.text(tedaviLines, 25, yPosition);
+          yPosition += tedaviLines.length * 4 + 4;
+        }
+      } else {
+        // Varsayılan açıklama ve öneriler
+        doc.setFontSize(9);
+        doc.setTextColor(60, 60, 60);
+        const descLines = doc.splitTextToSize(finding.description || 'Detaylı değerlendirme için diş hekimine başvurunuz.', pageWidth - 40);
+        doc.text(descLines, 25, yPosition);
+        yPosition += descLines.length * 4 + 4;
+      }
+
+      // Ayırıcı
+      doc.setDrawColor(220, 220, 220);
+      doc.line(15, yPosition, pageWidth - 15, yPosition);
+      yPosition += 10;
     });
 
-    // Alt bilgi
+    // ===== SON SAYFA: HASTA BİLGİLENDİRME =====
+    if (report?.hasta_bilgilendirme) {
+      doc.addPage();
+      yPosition = 20;
+
+      doc.setFontSize(16);
+      doc.setTextColor(19, 164, 236);
+      doc.text('ℹ️ Hasta Bilgilendirme', 15, yPosition);
+      yPosition += 12;
+
+      doc.setFillColor(240, 249, 255);
+      doc.rect(15, yPosition - 3, pageWidth - 30, 30, 'F');
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      const hastaLines = doc.splitTextToSize(report.hasta_bilgilendirme, pageWidth - 40);
+      doc.text(hastaLines, 20, yPosition + 5);
+      yPosition += 40;
+
+      if (report.prognoz) {
+        doc.setFontSize(11);
+        doc.setTextColor(34, 197, 94);
+        doc.setFont(undefined, 'bold');
+        doc.text('Prognoz:', 15, yPosition);
+        yPosition += 6;
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(60, 60, 60);
+        const prognozLines = doc.splitTextToSize(report.prognoz, pageWidth - 30);
+        doc.text(prognozLines, 15, yPosition);
+      }
+    }
+
+    // Alt bilgi tüm sayfalara
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
       doc.text(
-        `AI Dental Analysis - Sayfa ${i} / ${pageCount}`,
+        `AI Dental Analysis - Gemini Destekli Rapor - Sayfa ${i} / ${pageCount}`,
         pageWidth / 2,
         pageHeight - 10,
+        { align: 'center' }
+      );
+      doc.text(
+        'Bu rapor yapay zeka destekli bir ön değerlendirmedir. Kesin tanı için diş hekiminize danışın.',
+        pageWidth / 2,
+        pageHeight - 5,
         { align: 'center' }
       );
     }
 
     // PDF'i indir
-    const fileName = `dental-analysis-${new Date().toISOString().split('T')[0]}.pdf`;
+    const fileName = `dental-ai-report-${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(fileName);
     console.log('PDF başarıyla indirildi:', fileName);
+    
     } catch (error) {
       console.error('PDF oluşturma hatası:', error);
       alert('PDF oluştururken bir hata oluştu: ' + error.message);
+    } finally {
+      setIsGeneratingReport(false);
     }
   };
 
@@ -441,10 +678,27 @@ export default function ResultPage() {
             </button>
             <button 
               onClick={downloadPDFReport}
-              className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-primary text-white hover:bg-primary/90 gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3"
+              disabled={isGeneratingReport}
+              className={`flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 gap-2 text-sm font-bold leading-normal tracking-[0.015em] min-w-0 px-3 ${
+                isGeneratingReport 
+                  ? 'bg-primary/50 text-white cursor-not-allowed' 
+                  : 'bg-primary text-white hover:bg-primary/90'
+              }`}
             >
-              <span className="material-symbols-outlined text-lg">download</span>
-              <span className="hidden sm:inline">Raporu İndir</span>
+              {isGeneratingReport ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span className="hidden sm:inline">AI Rapor Oluşturuluyor...</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-lg">download</span>
+                  <span className="hidden sm:inline">AI Rapor İndir</span>
+                </>
+              )}
             </button>
             <button 
               onClick={() => navigate('/')}
@@ -544,31 +798,73 @@ export default function ResultPage() {
 
             <div className="flex flex-col lg:flex-row flex-1 gap-6 p-4">
               <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-                <div className="relative flex-1 min-h-[400px]">
+                <div 
+                  ref={containerRef}
+                  className="relative flex-1 min-h-[400px] overflow-hidden cursor-grab active:cursor-grabbing"
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseLeave}
+                >
                   {imageUrl && (
-                    <>
-                      <img
-                        ref={imageRef}
-                        src={imageUrl}
-                        alt="Dental X-ray"
-                        className="w-full h-full object-contain p-4"
-                      />
-                      <canvas
-                        ref={canvasRef}
-                        className="absolute top-0 left-0 w-full h-full pointer-events-none"
-                        style={{ display: showMarkers ? 'block' : 'none' }}
-                      />
-                    </>
+                    <div 
+                      className="absolute inset-0 flex items-center justify-center p-4"
+                      style={{
+                        transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
+                        transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                      }}
+                    >
+                      <div className="relative">
+                        <img
+                          ref={imageRef}
+                          src={imageUrl}
+                          alt="Dental X-ray"
+                          className="max-w-full max-h-full object-contain select-none"
+                          draggable="false"
+                        />
+                        <canvas
+                          ref={canvasRef}
+                          className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                          style={{ display: showMarkers ? 'block' : 'none' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Zoom level indicator */}
+                  {zoom > 1 && (
+                    <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-1.5 rounded-full text-sm font-medium">
+                      {Math.round(zoom * 100)}%
+                    </div>
                   )}
                 </div>
                 <div className="flex justify-between gap-2 p-3 border-t border-slate-200 dark:border-slate-800">
                   <div className="flex gap-1">
-                    <button className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">
+                    <button 
+                      onClick={zoomIn}
+                      disabled={zoom >= 5}
+                      className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="Yakınlaştır"
+                    >
                       <span className="material-symbols-outlined">zoom_in</span>
                     </button>
-                    <button className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md">
+                    <button 
+                      onClick={zoomOut}
+                      disabled={zoom <= 1}
+                      className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="Uzaklaştır"
+                    >
                       <span className="material-symbols-outlined">zoom_out</span>
                     </button>
+                    {zoom > 1 && (
+                      <button 
+                        onClick={resetZoom}
+                        className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors"
+                        title="Sıfırla"
+                      >
+                        <span className="material-symbols-outlined">refresh</span>
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
                     <label className="flex items-center gap-2 cursor-pointer">

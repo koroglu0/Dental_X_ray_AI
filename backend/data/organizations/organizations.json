@@ -1,0 +1,21 @@
+[
+  {
+    "id": "3ae01107-e180-43b0-b6c3-cecacdd006f1",
+    "name": "Dental klinik ",
+    "type": "clinic",
+    "address": "adıyaman",
+    "phone": "02125489966",
+    "invite_code": "ZKW9SIYQ",
+    "members": [
+      {
+        "email": "aigeneratehub288@gmail.com",
+        "name": "mert krgl",
+        "role": "doctor",
+        "joined_at": "2025-12-12T21:14:05.700848"
+      }
+    ],
+    "created_at": "2025-12-12T21:13:39.031393",
+    "status": "active",
+    "updated_at": "2025-12-12T21:14:05.700862"
+  }
+]

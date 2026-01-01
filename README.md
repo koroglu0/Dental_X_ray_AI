@@ -26,10 +26,23 @@ BitirmeProjesi/
 │   │   └── types/          # TypeScript tipleri
 │   ├── public/
 │   └── package.json
-├── app.py                  # Flask Backend
+├── backend/                # Flask Backend
+│   ├── routes/             # API endpoints
+│   ├── services/           # Business logic
+│   ├── models/             # Data models
+│   ├── utils/              # Helper functions
+│   ├── config/             # Configuration
+│   ├── middleware/         # Auth & middleware
+│   └── app.py              # Main application
+├── infrastructure/         # AWS CDK Infrastructure ⭐ YENİ
+│   ├── stacks/             # CDK stack definitions
+│   │   └── dynamodb_stack.py  # DynamoDB tables
+│   ├── app.py              # CDK app entry point
+│   ├── requirements.txt    # CDK dependencies
+│   └── *.bat               # Deployment scripts
 ├── best.pt                 # YOLO Model
-├── requirements.txt        # Python bağımlılıkları
-└── uploads/                # Yüklenen dosyalar
+├── requirements.txt        # Python dependencies
+└── data/                   # Local data storage
 ```
 
 ## 🛠️ Teknolojiler
@@ -48,6 +61,14 @@ BitirmeProjesi/
 - **React Router 7.9**: Client-side routing
 - **jsPDF + autoTable**: PDF oluşturma
 - **Axios**: HTTP istekleri
+
+### AWS Infrastructure ⭐ YENİ
+- **AWS DynamoDB**: NoSQL veritabanı (Users, Analyses, Patients, Organizations, Notes)
+- **AWS CDK**: Infrastructure as Code (Python)
+- **CloudFormation**: Stack yönetimi
+- **IAM**: Güve
+- AWS Account (DynamoDB için) ⭐ YENİ
+- AWS CLI configured (opsiyonel, AWS kullanımı için)nlik ve erişim kontrolü
 
 ## 📋 Gereksinimler
 
@@ -86,7 +107,28 @@ pip install -r requirements.txt
 
 1. Kendi eğittiğiniz YOLO modelini kullanın
 2. Veya proje sahibinden model dosyasını edinin
-3. `best.pt` dosyasını proje kök dizinine yerleştirin
+3. `besAWS DynamoDB Kurulumu ⭐ YENİ (Opsiyonel)
+
+AWS DynamoDB kullanmak istiyorsanız:
+
+```bash
+cd infrastructure
+
+# CDK kurulumu ve setup
+.\setup-cdk.bat
+
+# AWS credentials yapılandırma
+aws configure
+
+# Stack'i deploy et
+.\deploy-stack.bat
+```
+
+Detaylı talimatlar için: [infrastructure/README.md](infrastructure/README.md)
+
+**Not:** DynamoDB kullanmak istemiyorsanız, `backend/.env` dosyasında `USE_DYNAMODB=false` yapın. Sistem otomatik olarak local JSON dosya sistemini kullanacaktır.
+
+### 5. t.pt` dosyasını proje kök dizinine yerleştirin
 
 ### 4. Frontend Kurulumu
 

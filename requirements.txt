@@ -5,3 +5,10 @@ opencv-python
 numpy
 pillow
 PyJWT
+boto3
+python-dotenv
+python-jose[cryptography]  # Cognito JWT verification için
+google-auth  # Google OAuth token verification için
+google-auth-oauthlib
+google-auth-httplib2
+requests
