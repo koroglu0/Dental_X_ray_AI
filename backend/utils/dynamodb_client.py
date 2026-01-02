@@ -19,14 +19,12 @@ class DynamoDBClient:
     
     def _initialize(self):
         """DynamoDB bağlantısını başlat"""
-        if not Config.USE_DYNAMODB:
-            print("⚠️  DynamoDB kapalı - JSON dosya sistemi kullanılıyor")
-            return
-        
         try:
             # AWS credentials kontrolü
             if not Config.AWS_ACCESS_KEY_ID or not Config.AWS_SECRET_ACCESS_KEY:
                 print("⚠️  AWS credentials bulunamadı - .env dosyasını kontrol edin")
+                self._dynamodb = None
+                self._client = None
                 return
             
             # DynamoDB client oluştur

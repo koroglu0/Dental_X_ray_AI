@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { config } from '../config';
 
 export default function PatientUploadPage() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -42,7 +43,7 @@ export default function PatientUploadPage() {
   const fetchOrganizations = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/organizations', {
+      const response = await fetch(`${config.apiBaseUrl}/api/organizations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -62,7 +63,7 @@ export default function PatientUploadPage() {
     try {
       const token = localStorage.getItem('token');
       console.log('🔍 Fetching doctors for org:', orgId);
-      const response = await fetch(`http://localhost:5000/api/organizations/${orgId}/members`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/organizations/${orgId}/members`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -151,7 +152,7 @@ export default function PatientUploadPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/patient/send-xray', {
+      const response = await fetch(`${config.apiBaseUrl}/api/patient/send-xray`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

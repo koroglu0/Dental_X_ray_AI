@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { config } from '../config';
 
 export default function ResultPage() {
   const location = useLocation();
@@ -253,7 +254,7 @@ export default function ResultPage() {
     setIsGeneratingReport(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/generate-report', {
+      const response = await fetch(`${config.apiBaseUrl}/api/generate-report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

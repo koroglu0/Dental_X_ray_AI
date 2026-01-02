@@ -23,13 +23,8 @@ def create_app(config_class=Config):
     # CORS ayarları
     CORS(app, origins=app.config['CORS_ORIGINS'])
     
-    # Gerekli klasörleri oluştur
+    # Sadece upload klasörünü oluştur (DynamoDB kullanıyoruz)
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['HISTORY_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['USERS_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['ORGANIZATIONS_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['PATIENTS_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['NOTES_FOLDER'], exist_ok=True)
     
     # Blueprint'leri kaydet
     app.register_blueprint(auth_bp, url_prefix='/api')

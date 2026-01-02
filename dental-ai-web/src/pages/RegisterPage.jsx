@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { config } from '../config';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/register', {
+      const response = await fetch(`${config.apiBaseUrl}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +103,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/confirm-email', {
+      const response = await fetch(`${config.apiBaseUrl}/api/confirm-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

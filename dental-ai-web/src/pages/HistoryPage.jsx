@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { config } from '../config';
 
 export default function HistoryPage() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export default function HistoryPage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('http://localhost:5000/api/history', {
+      const response = await fetch(`${config.apiBaseUrl}/api/history`, {
         headers: headers
       });
       if (response.ok) {
@@ -42,7 +43,7 @@ export default function HistoryPage() {
 
   const handleAnalysisClick = async (analysis) => {
     try {
-      const imageUrl = `http://localhost:5000/api/uploads/${analysis.filename}`;
+      const imageUrl = `${config.apiBaseUrl}/api/uploads/${analysis.filename}`;
       navigate('/result', { 
         state: { 
           result: {
@@ -148,7 +149,7 @@ export default function HistoryPage() {
                 className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg bg-gray-200 dark:bg-gray-800"
                 style={{ 
                   backgroundImage: analysis.filename 
-                    ? `url(http://localhost:5000/api/uploads/${analysis.filename})` 
+                    ? `url(${config.apiBaseUrl}/api/uploads/${analysis.filename})` 
                     : 'none' 
                 }}
               >

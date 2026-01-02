@@ -1,45 +1,17 @@
 """
-Hasta yönetim servisi
+Hasta yönetim servisi - Sadece DynamoDB
 """
-import os
-import json
 import uuid
 from datetime import datetime
 from config.settings import Config
+from utils.dynamodb_client import dynamodb_client
 
 class PatientService:
-    """Hasta işlemleri servisi"""
-    
-    @staticmethod
-    def get_patients_file():
-        """Hastalar dosya yolunu döndür"""
-        return os.path.join(Config.PATIENTS_FOLDER, 'patients.json')
-    
-    @staticmethod
-    def load_patients():
-        """Tüm hastaları yükle"""
-        file_path = PatientService.get_patients_file()
-        
-        if not os.path.exists(file_path):
-            return []
-        
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    
-    @staticmethod
-    def save_patients(patients):
-        """Hastaları kaydet"""
-        os.makedirs(Config.PATIENTS_FOLDER, exist_ok=True)
-        file_path = PatientService.get_patients_file()
-        
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(patients, f, ensure_ascii=False, indent=2)
+    """Hasta işlemleri servisi - DynamoDB Only"""
     
     @staticmethod
     def create_patient(name, birth_date, gender, phone='', address='', organization_id=None):
         """Yeni hasta oluştur"""
-        patients = PatientService.load_patients()
-        
         patient = {
             'id': str(uuid.uuid4()),
             'name': name,
@@ -52,70 +24,98 @@ class PatientService:
             'status': 'active'
         }
         
-        patients.append(patient)
-        PatientService.save_patients(patients)
+        # DynamoDB'ye kaydet
+        table = dynamodb_client.dynamodb.Table(Config.PATIENTS_TABLE)
+        table.put_item(Item=patient)
         
         return patient
     
     @staticmethod
     def get_patient(patient_id):
         """Hasta bilgilerini getir"""
-        patients = PatientService.load_patients()
+        table = dynamodb_client.dynamodb.Table(Config.PATIENTS_TABLE)
         
-        for patient in patients:
-            if patient['id'] == patient_id:
-                return patient
-        
-        return None
+        try:
+            response = table.get_item(Key={'id': patient_id})
+            return response.get('Item')
+        except Exception as e:
+            print(f"DynamoDB get patient error: {e}")
+            return None
     
     @staticmethod
     def update_patient(patient_id, **kwargs):
         """Hasta bilgilerini güncelle"""
-        patients = PatientService.load_patients()
+        table = dynamodb_client.dynamodb.Table(Config.PATIENTS_TABLE)
         
-        for i, patient in enumerate(patients):
-            if patient['id'] == patient_id:
-                # Güncellenebilir alanlar
-                if 'name' in kwargs:
-                    patient['name'] = kwargs['name']
-                if 'birth_date' in kwargs:
-                    patient['birth_date'] = kwargs['birth_date']
-                if 'gender' in kwargs:
-                    patient['gender'] = kwargs['gender']
-                if 'phone' in kwargs:
-                    patient['phone'] = kwargs['phone']
-                if 'address' in kwargs:
-                    patient['address'] = kwargs['address']
-                if 'status' in kwargs:
-                    patient['status'] = kwargs['status']
-                
-                patient['updated_at'] = datetime.now().isoformat()
-                patients[i] = patient
-                
-                PatientService.save_patients(patients)
-                return patient
-        
-        return None
+        try:
+            # Güncellenebilir alanlar
+            update_expr_parts = []
+            expr_attr_values = {}
+            
+            if 'name' in kwargs:
+                update_expr_parts.append('name = :name')
+                expr_attr_values[':name'] = kwargs['name']
+            if 'birth_date' in kwargs:
+                update_expr_parts.append('birth_date = :birth_date')
+                expr_attr_values[':birth_date'] = kwargs['birth_date']
+            if 'gender' in kwargs:
+                update_expr_parts.append('gender = :gender')
+                expr_attr_values[':gender'] = kwargs['gender']
+            if 'phone' in kwargs:
+                update_expr_parts.append('phone = :phone')
+                expr_attr_values[':phone'] = kwargs['phone']
+            if 'address' in kwargs:
+                update_expr_parts.append('address = :address')
+                expr_attr_values[':address'] = kwargs['address']
+            if 'status' in kwargs:
+                update_expr_parts.append('#s = :status')
+                expr_attr_values[':status'] = kwargs['status']
+            
+            update_expr_parts.append('updated_at = :updated_at')
+            expr_attr_values[':updated_at'] = datetime.now().isoformat()
+            
+            update_expr = 'SET ' + ', '.join(update_expr_parts)
+            
+            response = table.update_item(
+                Key={'id': patient_id},
+                UpdateExpression=update_expr,
+                ExpressionAttributeNames={'#s': 'status'} if 'status' in kwargs else None,
+                ExpressionAttributeValues=expr_attr_values,
+                ReturnValues='ALL_NEW'
+            )
+            
+            return response.get('Attributes')
+        except Exception as e:
+            print(f"DynamoDB update patient error: {e}")
+            return None
     
     @staticmethod
     def delete_patient(patient_id):
         """Hastayı sil"""
-        patients = PatientService.load_patients()
+        table = dynamodb_client.dynamodb.Table(Config.PATIENTS_TABLE)
         
-        for i, patient in enumerate(patients):
-            if patient['id'] == patient_id:
-                patients.pop(i)
-                PatientService.save_patients(patients)
-                return True
-        
-        return False
+        try:
+            table.delete_item(Key={'id': patient_id})
+            return True
+        except Exception as e:
+            print(f"DynamoDB delete patient error: {e}")
+            return False
     
     @staticmethod
     def get_all_patients(organization_id=None):
         """Tüm hastaları getir (isteğe bağlı organizasyon filtresi)"""
-        patients = PatientService.load_patients()
+        table = dynamodb_client.dynamodb.Table(Config.PATIENTS_TABLE)
         
-        if organization_id:
-            patients = [p for p in patients if p.get('organization_id') == organization_id]
-        
-        return patients
+        try:
+            if organization_id:
+                response = table.scan(
+                    FilterExpression='organization_id = :org_id',
+                    ExpressionAttributeValues={':org_id': organization_id}
+                )
+            else:
+                response = table.scan()
+            
+            return response.get('Items', [])
+        except Exception as e:
+            print(f"DynamoDB get all patients error: {e}")
+            return []

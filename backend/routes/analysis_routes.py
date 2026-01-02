@@ -185,6 +185,9 @@ def send_xray_to_doctor(current_user):
         filepath = os.path.join(Config.UPLOAD_FOLDER, filename)
         file.save(filepath)
         
+        # Image URL oluştur
+        image_url = f'/uploads/{filename}'
+        
         # Analizi 'pending' durumunda kaydet (AI analizi yapılmamış)
         user_email = current_user['email']
         analysis_data = AnalysisService.save_pending_analysis(
@@ -192,7 +195,8 @@ def send_xray_to_doctor(current_user):
             filename=filename,
             organization_id=organization_id,
             doctor_email=doctor_email,
-            patient_note=patient_note
+            patient_note=patient_note,
+            image_url=image_url
         )
         
         return jsonify({

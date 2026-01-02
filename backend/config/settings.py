@@ -16,8 +16,7 @@ class Config:
     AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
     AWS_REGION = os.getenv('AWS_REGION', 'eu-north-1')
     
-    # AWS DynamoDB Configuration
-    USE_DYNAMODB = os.getenv('USE_DYNAMODB', 'true').lower() == 'true'
+    # AWS DynamoDB Configuration - Always enabled
     DYNAMODB_ENDPOINT = os.getenv('DYNAMODB_ENDPOINT', None)  # None for AWS, URL for local
     
     # AWS Cognito Configuration
@@ -38,16 +37,11 @@ class Config:
     ORGANIZATIONS_TABLE = 'DentalAI_Organizations'
     NOTES_TABLE = 'DentalAI_Notes'
     
-    # Paths (fallback for file storage)
+    # Paths (only for uploads)
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATA_DIR = os.path.join(BASE_DIR, 'data')
     
     UPLOAD_FOLDER = os.path.join(DATA_DIR, 'uploads')
-    HISTORY_FOLDER = os.path.join(DATA_DIR, 'history')
-    USERS_FOLDER = os.path.join(DATA_DIR, 'users')
-    ORGANIZATIONS_FOLDER = os.path.join(DATA_DIR, 'organizations')
-    PATIENTS_FOLDER = os.path.join(DATA_DIR, 'patients')
-    NOTES_FOLDER = os.path.join(DATA_DIR, 'notes')
     
     # Model
     MODEL_PATH = os.path.join(BASE_DIR, '..', 'best_final.pt')

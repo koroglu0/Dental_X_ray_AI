@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { config } from '../config';
 
 export default function UploadPage() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -21,12 +22,7 @@ export default function UploadPage() {
       return;
     }
     
-    if (user.role === 'admin') {
-      navigate('/admin');
-      return;
-    }
-    
-    // Doctor ise bu sayfada kalabilir
+    // Admin ve Doctor bu sayfayı kullanabilir
     
     // Pending röntgen varsa otomatik yükle
     const pendingXray = localStorage.getItem('pendingXray');
@@ -42,7 +38,7 @@ export default function UploadPage() {
         }
         
         // Röntgen görselini sunucudan al
-        const imageUrl = `http://localhost:5000/api/uploads/${xrayData.filename}`;
+        const imageUrl = `${config.apiBaseUrl}/api/uploads/${xrayData.filename}`;
         
         // Görseli blob olarak fetch et ve File objesine çevir
         fetch(imageUrl)
@@ -150,7 +146,7 @@ export default function UploadPage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch('http://localhost:5000/api/analyze', {
+      const response = await fetch(`${config.apiBaseUrl}/api/analyze`, {
         method: 'POST',
         headers: headers,
         body: formData,

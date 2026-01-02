@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { config } from '../config';
 
 export default function UserManagement() {
   const navigate = useNavigate();
@@ -12,6 +13,17 @@ export default function UserManagement() {
   const [filterRole, setFilterRole] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [stats, setStats] = useState(null);
+  const [organizations, setOrganizations] = useState([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newUser, setNewUser] = useState({
+    email: '',
+    password: '',
+    name: '',
+    role: 'doctor',
+    organization_id: '',
+    specialization: '',
+    phone: ''
+  });
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -25,6 +37,7 @@ export default function UserManagement() {
     
     fetchUsers();
     fetchStats();
+    fetchOrganizations();
   }, []);
 
   useEffect(() => {
@@ -48,7 +61,7 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/users', {
+      const response = await fetch(`${config.apiBaseUrl}/api/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -67,7 +80,7 @@ export default function UserManagement() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/users/stats', {
+      const response = await fetch(`${config.apiBaseUrl}/api/users/stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -77,6 +90,22 @@ export default function UserManagement() {
       }
     } catch (error) {
       console.error('Fetch stats error:', error);
+    }
+  };
+
+  const fetchOrganizations = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${config.apiBaseUrl}/api/organizations`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrganizations(data.organizations || []);
+      }
+    } catch (error) {
+      console.error('Fetch organizations error:', error);
     }
   };
 
@@ -90,7 +119,7 @@ export default function UserManagement() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${selectedUser.email}`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/users/${selectedUser.email}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +129,8 @@ export default function UserManagement() {
           name: selectedUser.name,
           role: selectedUser.role,
           phone: selectedUser.phone,
-          specialization: selectedUser.specialization
+          specialization: selectedUser.specialization,
+          organization_id: selectedUser.organization_id
         })
       });
 
@@ -120,6 +150,45 @@ export default function UserManagement() {
     }
   };
 
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${config.apiBaseUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newUser)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Kullanıcı oluşturuldu');
+        setShowCreateModal(false);
+        setNewUser({
+          email: '',
+          password: '',
+          name: '',
+          role: 'doctor',
+          organization_id: '',
+          specialization: '',
+          phone: ''
+        });
+        fetchUsers();
+        fetchStats();
+      } else {
+        alert(data.error || 'Kullanıcı oluşturulamadı');
+      }
+    } catch (error) {
+      console.error('Create user error:', error);
+      alert('Bir hata oluştu');
+    }
+  };
+
   const handleToggleStatus = async (userId, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'Pasif' : 'Aktif';
     
@@ -129,7 +198,7 @@ export default function UserManagement() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/toggle-status`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/users/${userId}/toggle-status`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -156,7 +225,7 @@ export default function UserManagement() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/users/${userId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -219,12 +288,21 @@ export default function UserManagement() {
               Tüm kullanıcıları görüntüle ve yönet
             </p>
           </div>
-          <button
-            onClick={() => navigate('/admin')}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-black dark:text-white rounded-lg transition-colors"
-          >
-            ← Geri
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">person_add</span>
+              Yeni Kullanıcı
+            </button>
+            <button
+              onClick={() => navigate('/admin')}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-black dark:text-white rounded-lg transition-colors"
+            >
+              ← Geri
+            </button>
+          </div>
         </div>
 
         {/* İstatistikler */}
@@ -295,6 +373,9 @@ export default function UserManagement() {
                     Rol
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Organizasyon
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Durum
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -327,6 +408,20 @@ export default function UserManagement() {
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(u.role)}`}>
                         {getRoleText(u.role)}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">
+                        {u.organization_id ? (
+                          organizations.find(org => org.id === u.organization_id)?.name || 'Bilinmiyor'
+                        ) : (
+                          <span className="text-gray-400 italic">Atanmamış</span>
+                        )}
+                      </div>
+                      {u.specialization && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {u.specialization}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -434,17 +529,34 @@ export default function UserManagement() {
                 </div>
 
                 {selectedUser.role === 'doctor' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Uzmanlık
-                    </label>
-                    <input
-                      type="text"
-                      value={selectedUser.specialization || ''}
-                      onChange={(e) => setSelectedUser({ ...selectedUser, specialization: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Organizasyon
+                      </label>
+                      <select
+                        value={selectedUser.organization_id || ''}
+                        onChange={(e) => setSelectedUser({ ...selectedUser, organization_id: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                      >
+                        <option value="">Organizasyon Seçin</option>
+                        {organizations.map(org => (
+                          <option key={org.id} value={org.id}>{org.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Uzmanlık
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedUser.specialization || ''}
+                        onChange={(e) => setSelectedUser({ ...selectedUser, specialization: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div>
@@ -472,6 +584,149 @@ export default function UserManagement() {
                     className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
                   >
                     Kaydet
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Yeni Kullanıcı Ekleme Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <h3 className="text-xl font-bold text-black dark:text-white mb-4">
+                Yeni Kullanıcı Ekle
+              </h3>
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Ad Soyad *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                    placeholder="Örn: Dr. Ahmet Yılmaz"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    E-posta *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                    placeholder="örnek@email.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Şifre *
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                    placeholder="En az 6 karakter"
+                    minLength={6}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Rol *
+                  </label>
+                  <select
+                    value={newUser.role}
+                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                  >
+                    <option value="patient">Hasta</option>
+                    <option value="doctor">Doktor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                {newUser.role === 'doctor' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Organizasyon
+                      </label>
+                      <select
+                        value={newUser.organization_id}
+                        onChange={(e) => setNewUser({ ...newUser, organization_id: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                      >
+                        <option value="">Organizasyon Seçin</option>
+                        {organizations.map(org => (
+                          <option key={org.id} value={org.id}>{org.name}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">Doktoru bir kliniğe atayın</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Uzmanlık
+                      </label>
+                      <input
+                        type="text"
+                        value={newUser.specialization}
+                        onChange={(e) => setNewUser({ ...newUser, specialization: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                        placeholder="Örn: Ortodonti, Endodonti"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Telefon
+                  </label>
+                  <input
+                    type="tel"
+                    value={newUser.phone}
+                    onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
+                    placeholder="+90 555 123 4567"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateModal(false);
+                      setNewUser({
+                        email: '',
+                        password: '',
+                        name: '',
+                        role: 'doctor',
+                        organization_id: '',
+                        specialization: '',
+                        phone: ''
+                      });
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-black dark:text-white rounded-lg font-semibold transition-colors"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-semibold transition-colors"
+                  >
+                    Oluştur
                   </button>
                 </div>
               </form>

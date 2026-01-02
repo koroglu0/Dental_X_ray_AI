@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { config } from '../config';
 
 export default function PatientManagement() {
   const navigate = useNavigate();
@@ -44,7 +45,7 @@ export default function PatientManagement() {
     try {
       const token = localStorage.getItem('token');
       // Patient rolündeki kullanıcıları getir
-      const response = await fetch('http://localhost:5000/api/users', {
+      const response = await fetch(`${config.apiBaseUrl}/api/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -78,7 +79,7 @@ export default function PatientManagement() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${selectedPatient.email}`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/users/${selectedPatient.email}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ export default function PatientManagement() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${patientId}`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/users/${patientId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

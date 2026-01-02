@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cognitoOAuthConfig } from '../aws-config';
+import { config } from '../config';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ export default function AuthCallback() {
         console.log('🔐 Authorization code received, exchanging for tokens...');
 
         // Authorization code'u token'lara dönüştür
-        const tokenResponse = await fetch('http://localhost:5000/api/cognito-callback', {
+        const tokenResponse = await fetch(`${config.apiBaseUrl}/api/cognito-callback`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
